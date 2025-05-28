@@ -23,6 +23,7 @@ RUN apt-get update && apt-get install -y \
     libxrandr2 \
     xdg-utils \
     wget \
+    procps \
     && rm -rf /var/lib/apt/lists/*
 
 # Cria diretório de trabalho

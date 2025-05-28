@@ -9,6 +9,7 @@ services:
     volumes:
       - ./api:/app 
       - ./tokens:/app/tokens
+    command: sh -c "npm install && node app.js"
       
     restart: unless-stopped
 

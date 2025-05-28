@@ -292,7 +292,7 @@
                 </ol>
                 <h4>Via Requisição GET:</h4>
                 <p>Faça uma requisição GET para o endpoint:</p>
-                <pre><code>GET ${apiBaseUrl}/api/groups</code></pre>
+                <pre><code>GET ${apiBaseUrl}/api/grupos</code></pre>
 
                 <h3>3. Renovar Token</h3>
                 <h4>Via Interface Gráfica:</h4>
@@ -319,7 +319,7 @@
 -d '{"number": "559999999999", "title": "Olá", "message": "Olá, esta é uma mensagem de teste!"}'</code></pre>
 
                 <h4>Listar Grupos:</h4>
-                <pre><code>curl -X GET ${apiBaseUrl}/api/groups</code></pre>
+                <pre><code>curl -X GET ${apiBaseUrl}/api/grupos</code></pre>
 
                 <h4>Renovar Token:</h4>
                 <pre><code>curl -X POST ${apiBaseUrl}/api/renew-token</code></pre>
@@ -367,7 +367,7 @@
             errorDiv.textContent = ''; 
 
             try {
-                const response = await fetch(`${apiBaseUrl}/api/groups`);
+                const response = await fetch(`${apiBaseUrl}/api/grupos`);
                 if (!response.ok) {
                     throw new Error('Erro ao buscar os grupos: ' + response.statusText);
                 }
@@ -391,33 +391,37 @@
         }
 
         async function renewToken() {
-            const errorDiv = document.getElementById('tokenError');
-            const qrCodeContainer = document.getElementById('qrCodeContainer');
-            errorDiv.textContent = '';
-            qrCodeContainer.innerHTML = ''; // Limpa qualquer QR Code anterior
+  const confirmReset = confirm("Tem certeza que deseja renovar o token?\nIsso desconectará a sessão atual.");
+  if (!confirmReset) return;
 
-            try {
-                // Solicitar a renovação do token
-                const response = await fetch(`${apiBaseUrl}/api/renew-token`, {
-                    method: 'POST',
-                });
-                if (!response.ok) {
-                    throw new Error('Erro ao renovar o token');
-                }
+  const errorDiv = document.getElementById('tokenError');
+  const qrCodeContainer = document.getElementById('qrCodeContainer');
+  errorDiv.textContent = '';
+  qrCodeContainer.innerHTML = '';
 
-                // Solicitar o QR Code
-                await fetchQRCode();
-            } catch (error) {
-                console.error('Erro:', error);
-                errorDiv.textContent = 'Erro ao renovar o token: ' + error.message;
-            }
-        }
+  try {
+    const response = await fetch(`${apiBaseUrl}/api/reset-token`, {
+      method: 'POST',
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao renovar o token');
+    }
+
+    // Tenta buscar o novo QR code após aguardar o reset
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    await fetchQRCode();
+  } catch (error) {
+    errorDiv.textContent = 'Erro ao renovar o token: ' + error.message;
+  }
+}
+
 
         async function fetchQRCode() {
             const qrCodeContainer = document.getElementById('qrCodeContainer');
             const errorDiv = document.getElementById('tokenError');
             try {
-                const qrResponse = await fetch('${apiBaseUrl}/api/qrcode');
+                const qrResponse = await fetch(`${apiBaseUrl}/api/qrcode`);
                 if (!qrResponse.ok) {
                     throw new Error('QR Code não disponível');
                 }

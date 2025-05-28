@@ -55,45 +55,37 @@ app.get("/api/status", (req, res) => {
 });
 
 // Endpoint para renovar o token
-app.post("/api/renew-token", async (req, res) => {
-  if (clientInstance) {
-    try {
-      // Encerra a instância atual do Venom Bot
-      await clientInstance.close();
-      clientInstance = null;
-      console.log('Venom Bot encerrado com sucesso.');
-    } catch (error) {
-      console.error('Erro ao encerrar o Venom Bot:', error);
-      return res.status(500).json({ error: 'Erro ao encerrar o Venom Bot' });
+const { execSync } = require("child_process");
+
+async function renewToken() {
+  const confirmReset = confirm("Tem certeza que deseja renovar o token?\nIsso desconectará a sessão atual.");
+  if (!confirmReset) return;
+
+  const errorDiv = document.getElementById('tokenError');
+  const qrCodeContainer = document.getElementById('qrCodeContainer');
+  errorDiv.textContent = '';
+  qrCodeContainer.innerHTML = '';
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/api/reset-token`, {
+      method: 'POST',
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao renovar o token');
     }
+
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    await fetchQRCode();
+    showTab('tokenTab'); // 👈 adiciona isso
+  } catch (error) {
+    errorDiv.textContent = 'Erro ao renovar o token: ' + error.message;
   }
+}
 
-  const sessionPath = config.sessionDataPath;
 
-  // Remove todos os arquivos da pasta de sessão
-  fs.rm(sessionPath, { recursive: true, force: true }, async (err) => {
-    if (err) {
-      console.error('Erro ao renovar o token:', err);
-      return res.status(500).json({ error: 'Erro ao renovar o token' });
-    }
 
-    // Aguarda um curto período para garantir que todos os processos foram encerrados
-    await new Promise(resolve => setTimeout(resolve, 2000)); // Aguarda 2 segundos
 
-    // Reinicia a sessão após a remoção da pasta
-    startVenom()
-      .then((client) => {
-        clientInstance = client;
-        serviceStatus = 'Logged in';
-        res.json({ message: 'Token renovado com sucesso!' });
-      })
-      .catch((erro) => {
-        console.error('Erro ao iniciar a nova sessão:', erro);
-        serviceStatus = 'Error';
-        res.status(500).json({ error: 'Erro ao renovar o token' });
-      });
-  });
-});
 
 // Função para iniciar o Venom Bot
 function startVenom() {
@@ -142,8 +134,12 @@ function startVenom() {
       if (state === 'CONFLICT' || state === 'UNLAUNCHED') {
         client.useHere(); // Força a sessão a ser usada aqui
       } else if (state === 'CONNECTED') {
-        qrCode = null; // Limpa o QR Code
-      }
+  console.log('Sessão conectada. Limpando QR Code em 10 segundos...');
+  setTimeout(() => {
+    qrCode = null;
+    console.log('QR Code limpo após conexão.');
+  }, 10000); // 10 segundos
+}
     });
 
     // Opcional: Escuta mudanças na stream (usado para reconexões)
@@ -194,38 +190,31 @@ function start(client) {
   });
 
   // Obter Grupos com fallback (contatos -> chats)
- app.get("/api/groups", async (req, res, next) => {
-  if (!clientInstance) {
-    return res.status(503).json({ error: 'Cliente não inicializado' });
-  }
+ app.get("/api/grupos", async (req, res) => {
+  console.log('Recebendo solicitação: ', req.body);
 
   try {
-    let groups = [];
+    const chats = await clientInstance.getAllChats();
 
-    const contacts = await clientInstance.getAllContacts();
-    console.log('[DEBUG] Contatos:', contacts.length);
-    groups = contacts.filter(c => c.isGroup);
-    console.log('[DEBUG] Grupos encontrados em getAllContacts():', groups.length);
+    const groups = chats.filter(chat =>
+      chat.id && typeof chat.id === 'object' && chat.id.server === 'g.us'
+    );
 
-    if (groups.length === 0) {
-      const chats = await clientInstance.getAllChatsWithMessages();
-      console.log('[DEBUG] Chats com mensagens:', chats.length);
-      groups = chats.filter(c => c.isGroup && c.name);
-      console.log('[DEBUG] Grupos encontrados em getAllChatsWithMessages():', groups.length);
-    }
+    console.log('[DEBUG] Total de chats:', chats.length);
+    console.log('[DEBUG] Grupos identificados:', groups.length);
 
     const groupDetails = groups.map(group => ({
-      id: group.id?._serialized || group.id,
+      id: group.id._serialized || group.id,
       name: group.name || '(sem nome)'
     }));
 
-    console.log('[DEBUG] Grupos enviados para o frontend:', groupDetails);
     res.json(groupDetails);
   } catch (error) {
     console.error('Erro ao obter os grupos:', error);
     res.status(500).json({ error: 'Erro ao obter os grupos' });
   }
 });
+
 
 }
 
