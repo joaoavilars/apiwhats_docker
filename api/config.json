@@ -1,0 +1,9 @@
+{
+    "apiPort": 4000,
+    "apiHost": "http://localhost",
+    "sessionDataPath": "./tokens",
+    "chromeExecutablePath": "/usr/bin/chromium",
+    "useChrome": true,
+    "venomSessionName": "API-ZAP"
+  }
+  

@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>API WhatsApp</title>
+    <style>
+        /* Estilos Gerais */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column; /* Alterado para coluna */
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 90%;
+            max-width: 800px;
+            background-color: #fff;
+            padding: 20px;
+            margin-top: 20px; /* Adicionado para espaçamento */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        /* Estilos das Abas */
+        .tabs {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px;
+            background-color: #f2f2f2;
+            cursor: pointer;
+            flex-grow: 1;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 5px 5px 0 0;
+        }
+        .tab + .tab {
+            margin-left: 5px;
+        }
+        .tab.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        /* Estilos do Conteúdo das Abas */
+        .tab-content {
+            display: none;
+            border: 1px solid #ddd;
+            border-top: none;
+            padding: 20px;
+            border-radius: 0 5px 5px 5px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        /* Estilos dos Botões */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        /* Estilos do QR Code */
+        .qr-code {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .qr-code img {
+            max-width: 100%;
+            height: auto;
+        }
+        /* Estilos das Mensagens de Erro */
+        .error {
+            color: red;
+            text-align: center;
+            margin-top: 20px;
+        }
+        /* Estilos dos Inputs */
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .input-group input, .input-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        /* Estilos da Tabela */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+            font-size: 14px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        /* Estilos Responsivos */
+        @media (max-width: 600px) {
+            .tabs {
+                flex-direction: column;
+            }
+            .tab + .tab {
+                margin-left: 0;
+                margin-top: 5px;
+            }
+        }
+        /* Estilos do Botão de Ajuda */
+        .help-button {
+            margin: 20px 0;
+        }
+        .help-button button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .help-button button:hover {
+            background-color: #45a049;
+        }
+        /* Estilos para o Modal de Ajuda */
+        .modal {
+            display: none; /* Oculto por padrão */
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 50px auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 800px;
+            border-radius: 10px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+        }
+        .help-content h2 {
+            margin-top: 0;
+        }
+        .help-content code {
+            background-color: #f2f2f2;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        .help-content pre {
+            background-color: #f2f2f2;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+    <script src="config.js"></script>
+
+</head>
+<body>
+    <div class="container">
+        <h1>API WhatsApp</h1>
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('messageTab')">Enviar Mensagem</div>
+            <div class="tab" onclick="showTab('groupTab')">Grupos</div>
+            <div class="tab" onclick="showTab('tokenTab')">Renovar Token</div>
+        </div>
+
+        <!-- Tab 1: Enviar Mensagem -->
+        <div id="messageTab" class="tab-content active">
+            <h2>Enviar Mensagem</h2>
+            <div class="input-group">
+                <label for="number">Número do WhatsApp</label>
+                <input type="text" id="number" placeholder="Número com DDI (ex: 559999999999)">
+            </div>
+            <div class="input-group">
+                <label for="title">Título</label>
+                <input type="text" id="title" placeholder="Título da mensagem">
+            </div>
+            <div class="input-group">
+                <label for="message">Mensagem</label>
+                <textarea id="message" rows="4" placeholder="Digite sua mensagem"></textarea>
+            </div>
+            <button class="btn" onclick="sendMessage()">Enviar Mensagem</button>
+            <div id="messageError" class="error"></div>
+        </div>
+
+        <!-- Tab 2: Grupos -->
+        <div id="groupTab" class="tab-content">
+            <h2>Lista de Grupos</h2>
+            <button class="btn" onclick="fetchGroups()">Carregar Grupos</button>
+            <table id="groupTable">
+                <thead>
+                    <tr>
+                        <th>ID do Grupo</th>
+                        <th>Nome do Grupo</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <div id="groupError" class="error"></div>
+        </div>
+
+        <!-- Tab 3: Renovar Token -->
+        <div id="tokenTab" class="tab-content">
+            <h2>Renovar Token</h2>
+            <button class="btn" onclick="renewToken()">Renovar Token</button>
+            <div id="qrCodeContainer" class="qr-code"></div>
+            <div id="tokenError" class="error"></div>
+        </div>
+    </div>
+
+    <!-- Botão de Ajuda -->
+    <div class="help-button">
+        <button onclick="openHelp()">Ajuda</button>
+    </div>
+
+    <!-- Modal de Ajuda -->
+    <div id="helpModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeHelp()">&times;</span>
+            <div class="help-content">
+                <h2>Ajuda - API WhatsApp</h2>
+                <p>Bem-vindo à página de ajuda! Aqui você encontrará instruções sobre como utilizar a API para enviar mensagens, visualizar grupos e renovar o token, tanto via interface gráfica quanto via requisições POST.</p>
+                
+                <h3>1. Enviar Mensagem</h3>
+                <h4>Via Interface Gráfica:</h4>
+                <ol>
+                    <li>Navegue até a aba <strong>Enviar Mensagem</strong>.</li>
+                    <li>Preencha o campo <strong>Número do WhatsApp</strong> com o número do destinatário, incluindo o código do país (ex: 559999999999).</li>
+                    <li>Insira o <strong>Título</strong> e a <strong>Mensagem</strong> desejada.</li>
+                    <li>Clique em <strong>Enviar Mensagem</strong> para enviar.</li>
+                </ol>
+                <h4>Via Requisição POST:</h4>
+                <p>Faça uma requisição POST para o endpoint:</p>
+                <pre><code>POST ${apiBaseUrl}/api/message</code></pre>
+                <p>Com o corpo da requisição em formato JSON:</p>
+                <pre><code>{
+  "number": "559999999999",
+  "title": "Olá",
+  "message": "Sua mensagem aqui"
+}</code></pre>
+
+                <h3>2. Visualizar Grupos</h3>
+                <h4>Via Interface Gráfica:</h4>
+                <ol>
+                    <li>Navegue até a aba <strong>Grupos</strong>.</li>
+                    <li>Clique em <strong>Carregar Grupos</strong> para listar todos os grupos disponíveis.</li>
+                </ol>
+                <h4>Via Requisição GET:</h4>
+                <p>Faça uma requisição GET para o endpoint:</p>
+                <pre><code>GET ${apiBaseUrl}/api/groups</code></pre>
+
+                <h3>3. Renovar Token</h3>
+                <h4>Via Interface Gráfica:</h4>
+                <ol>
+                    <li>Navegue até a aba <strong>Renovar Token</strong>.</li>
+                    <li>Clique em <strong>Renovar Token</strong> para gerar um novo QR Code.</li>
+                    <li>Escaneie o QR Code com o aplicativo WhatsApp no seu celular.</li>
+                </ol>
+                <h4>Via Requisição POST:</h4>
+                <p>Faça uma requisição POST para o endpoint:</p>
+                <pre><code>POST ${apiBaseUrl}/api/renew-token</code></pre>
+
+                <h3>4. Observações Importantes</h3>
+                <ul>
+                    <li>Certifique-se de que o servidor backend está em execução na porta 4000.</li>
+                    <li>Para enviar mensagens para grupos, utilize o ID do grupo obtido na listagem de grupos.</li>
+                    <li>O QR Code é necessário para autenticar o Venom Bot com o seu WhatsApp.</li>
+                </ul>
+
+                <h3>5. Exemplos de Requisições com cURL</h3>
+                <h4>Enviar Mensagem:</h4>
+                <pre><code>curl -X POST ${apiBaseUrl}/api/message \
+-H "Content-Type: application/json" \
+-d '{"number": "559999999999", "title": "Olá", "message": "Olá, esta é uma mensagem de teste!"}'</code></pre>
+
+                <h4>Listar Grupos:</h4>
+                <pre><code>curl -X GET ${apiBaseUrl}/api/groups</code></pre>
+
+                <h4>Renovar Token:</h4>
+                <pre><code>curl -X POST ${apiBaseUrl}/api/renew-token</code></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabId) {
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => tab.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            document.querySelector(`.tab[onclick="showTab('${tabId}')"]`).classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        async function sendMessage() {
+            const number = document.getElementById('number').value;
+            const message = `${document.getElementById('title').value}\n${document.getElementById('message').value}`;
+            const errorDiv = document.getElementById('messageError');
+            errorDiv.textContent = '';
+
+            try {
+                const response = await fetch(`${apiBaseUrl}/api/message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ number, message }),
+                });
+                if (!response.ok) {
+                    throw new Error('Erro ao enviar a mensagem');
+                }
+                alert('Mensagem enviada com sucesso!');
+            } catch (error) {
+                errorDiv.textContent = 'Erro ao enviar a mensagem: ' + error.message;
+            }
+        }
+
+        async function fetchGroups() {
+            const errorDiv = document.getElementById('groupError');
+            errorDiv.textContent = ''; 
+
+            try {
+                const response = await fetch(`${apiBaseUrl}/api/groups`);
+                if (!response.ok) {
+                    throw new Error('Erro ao buscar os grupos: ' + response.statusText);
+                }
+
+                const groups = await response.json();
+
+                const tableBody = document.querySelector('#groupTable tbody');
+                tableBody.innerHTML = ''; 
+
+                groups.forEach(group => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${group.id}</td>
+                        <td>${group.name || '(sem nome)'}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                errorDiv.textContent = 'Erro ao buscar os grupos: ' + error.message;
+            }
+        }
+
+        async function renewToken() {
+            const errorDiv = document.getElementById('tokenError');
+            const qrCodeContainer = document.getElementById('qrCodeContainer');
+            errorDiv.textContent = '';
+            qrCodeContainer.innerHTML = ''; // Limpa qualquer QR Code anterior
+
+            try {
+                // Solicitar a renovação do token
+                const response = await fetch(`${apiBaseUrl}/api/renew-token`, {
+                    method: 'POST',
+                });
+                if (!response.ok) {
+                    throw new Error('Erro ao renovar o token');
+                }
+
+                // Solicitar o QR Code
+                await fetchQRCode();
+            } catch (error) {
+                console.error('Erro:', error);
+                errorDiv.textContent = 'Erro ao renovar o token: ' + error.message;
+            }
+        }
+
+        async function fetchQRCode() {
+            const qrCodeContainer = document.getElementById('qrCodeContainer');
+            const errorDiv = document.getElementById('tokenError');
+            try {
+                const qrResponse = await fetch('${apiBaseUrl}/api/qrcode');
+                if (!qrResponse.ok) {
+                    throw new Error('QR Code não disponível');
+                }
+
+                const qrData = await qrResponse.json();
+
+                // Exibe o QR Code na página usando a imagem base64
+                const qrImage = document.createElement('img');
+                qrImage.src = qrData.qrCode; // QR code data in base64
+                qrCodeContainer.innerHTML = ''; // Limpa qualquer QR Code anterior
+                qrCodeContainer.appendChild(qrImage);
+            } catch (error) {
+                console.error('Erro ao obter o QR Code:', error);
+
+                // Tenta novamente após alguns segundos se o QR Code não estiver disponível
+                if (error.message === 'QR Code não disponível') {
+                    setTimeout(fetchQRCode, 5000); // Tenta novamente em 5 segundos
+                } else {
+                    errorDiv.textContent = 'Erro ao obter o QR Code: ' + error.message;
+                }
+            }
+        }
+
+        // Mostrar automaticamente o QR Code ao abrir a aba "Renovar Token"
+        document.querySelector('.tab[onclick="showTab(\'tokenTab\')"]').addEventListener('click', fetchQRCode);
+
+        // Funções para abrir e fechar o modal de ajuda
+        function openHelp() {
+            document.getElementById('helpModal').style.display = 'block';
+        }
+
+        function closeHelp() {
+            document.getElementById('helpModal').style.display = 'none';
+        }
+
+        // Fecha o modal se o usuário clicar fora do conteúdo
+        window.onclick = function(event) {
+            const modal = document.getElementById('helpModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

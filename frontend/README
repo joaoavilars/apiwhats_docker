@@ -1,0 +1,8 @@
+no codigo, linha84 em:
+const response
+
+altere o localhost para o ip do servidor, mesmo sendo o servidor localhost, deve ser o ip dele na configuração
+
+npm install -g http-server
+
+nohup http-server frontend/ &

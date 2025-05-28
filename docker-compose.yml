@@ -1,0 +1,22 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: zapbot-backend
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./api:/app 
+      - ./tokens:/app/tokens
+      
+    restart: unless-stopped
+
+  frontend:
+    image: nginx:alpine
+    container_name: zapbot-frontend
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    restart: unless-stopped
