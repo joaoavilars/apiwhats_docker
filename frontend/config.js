@@ -1,1 +1,1 @@
-var apiBaseUrl = `http://localhost:4000`; // Altere conforme necessário
+var apiBaseUrl = `http://${window.location.hostname}:4000`;
